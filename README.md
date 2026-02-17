@@ -32,62 +32,12 @@ npx skills add <username>/<reponame>
 For example, to install a skill from this repository:
 
 ```bash
-npx skills add anthropics/agent-skills
+npx skills add trtmn/agent-skills
 ```
 
-This automatically populates the local `.claude/skills/` directory and makes the skill available via the `skill` command.
 
-## Usage
-Skills are invoked with the global `skill` command: `skill <skill‑name> [args]`.  A few examples:
 
-| Skill | Command | Description |
-|-------|---------|-------------|
-| `keybindings-help` | `skill keybindings-help --rebind ctrl+s` | Rebind the default Ctrl + S shortcut. |
-| `obsidian-markdown` | `skill obsidian-markdown --file notes.md` | Render markdown with Obsidian callouts and wikilinks. |
-| `xlsx` | `skill xlsx --open data.xlsx` | Open & manipulate spreadsheet data. |
-| `find-skills` | `skill find-skills --query "compile time logging"` | Discover a new skill to install. |
-
-Skills can also be composed in shell pipelines:
-```bash
-skill keybindings-help --list | skill find-skills --match "cli tool"
-```
-
-The `skills` binary exposes a CLI help command:
-```bash
-skill --help
-skill keybindings-help --help
-```
-
-## Contribution Guide
-We heavily rely on community contributions to grow the ecosystem.  Please follow these steps:
-
-1.  Fork the repo.
-2.  Create a new feature branch: `git checkout -b add-spell-check-skill`.
-3.  Write the skill in the dedicated folder under `packages/`.
-4.  Add a unit test in `tests/` and run `npm test`.
-5.  Bump `package.json` `version` field.
-6.  Open a PR against `main`.
-
-All PRs must pass:
-- Linting (`npm run lint`).
-- Unit tests (`npm test`).
-- Static type checking (`npm run typecheck`).
-- No fatal `npm audit` warnings.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detail.
-
-## Standards & Quality
-| Area | Tool |
-|------|------|
-| Linting | ESLint with the webpack style guide |
-| Formatting | Prettier |
-| Continuous Integration | GitHub Actions – `ci.yml` |
-| Security Scanning | Trivy (container) + `npm audit` |
-| Documentation | Typedoc for TypeScript skill crates |
 
 ## License
-Unlicensed – public domain per the Unlicense (see LICENSE file).
-
----
-For deeper documentation, visit the main [Claude Code docs](https://claude.ai/docs) or run `skill --help`.
+see LICENSE file
 
