@@ -34,6 +34,10 @@ mkdir -p src/utils && touch src/utils/helpers.ts
 - The error mentions missing directories, file not found, or path issues
 - You're trying to create a file in a nested directory structure
 
+## Edge case: broken symlinks
+
+If `mkdir -p` fails because a broken symlink occupies a path component (error like `No such file or directory` even though `mkdir -p` should create it), the symlink is pointing to a nonexistent target and blocking directory creation. Remove the broken symlink first with `rm <broken-symlink>`, then retry the `mkdir -p` + `touch` steps.
+
 ## When this does NOT apply
 
 - Edit or Write fails on a file that **already exists** — that's a different problem
