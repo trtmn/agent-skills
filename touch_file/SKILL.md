@@ -36,7 +36,7 @@ mkdir -p src/utils && touch src/utils/helpers.ts
 
 ## Edge case: broken symlinks
 
-If `mkdir -p` fails because a broken symlink occupies a path component (error like `No such file or directory` even though `mkdir -p` should create it), the symlink is pointing to a nonexistent target and blocking directory creation. Remove the broken symlink first with `rm <broken-symlink>`, then retry the `mkdir -p` + `touch` steps.
+If `mkdir -p` fails because a broken symlink occupies a path component (error like `No such file or directory` even though `mkdir -p` should create it), the symlink is pointing to a nonexistent target and blocking directory creation. **Do not remove it automatically** — the symlink may be there intentionally. Instead, tell the user what you found and ask how they'd like to proceed (e.g., remove the symlink, fix its target, or choose a different path).
 
 ## When this does NOT apply
 
