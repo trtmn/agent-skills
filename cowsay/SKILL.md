@@ -1,6 +1,9 @@
 ---
 name: cowsay
 description: Generates an ASCII cow saying custom text. Use when the user wants "cowsay", "cow say", or a cow to say something.
+allowed-tools:
+  - Bash(uvx cowsay:*)
+  - Bash(bash */cowsay.sh:*)
 ---
 
 # cowsay
