@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:tailscale.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:blog.gripdev.xyz)",
+      "WebFetch(domain:heywoodlh.io)",
+      "WebFetch(domain:dev.l1qu1d.net)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(open:*)",
+      "Bash(sort -t_ -k1)"
+    ]
+  }
+}
