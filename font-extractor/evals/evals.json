@@ -1,0 +1,38 @@
+{
+  "skill_name": "font-extractor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Extract all the fonts from https://gt-pressura.com and save them to ./fonts/",
+      "expected_output": "Font files downloaded and organized into ./fonts/<family-name>/ subdirectories",
+      "files": [],
+      "assertions": [
+        {
+          "id": "fonts_dir_created",
+          "description": "A ./fonts/ directory was created in the working directory",
+          "type": "manual"
+        },
+        {
+          "id": "subdirs_by_family",
+          "description": "Fonts are organized into subdirectories named by font family (not all flat in ./fonts/)",
+          "type": "manual"
+        },
+        {
+          "id": "woff2_files_present",
+          "description": "At least one .woff2 file was downloaded",
+          "type": "manual"
+        },
+        {
+          "id": "gt_pressura_found",
+          "description": "GT Pressura (or a close variant of that name) is identified as a font family",
+          "type": "manual"
+        },
+        {
+          "id": "summary_reported",
+          "description": "Claude reports a clear summary of what was downloaded (file count, sizes, families)",
+          "type": "manual"
+        }
+      ]
+    }
+  ]
+}

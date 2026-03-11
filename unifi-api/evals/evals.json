@@ -1,0 +1,23 @@
+{
+  "skill_name": "unifi-api",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Show me what's connected to my network right now — I want to see each device's name, IP, and how much bandwidth it's currently using",
+      "expected_output": "A formatted list of connected clients showing device name/hostname, IP address, and current throughput (upload and download rates)",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "What's my WAN IP, current internet speed, and how long has the router been up?",
+      "expected_output": "WAN IP address, download/upload speeds in Mbps, and router uptime in human-readable form (days/hours/minutes)",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "List all my firewall policies — I want to know which ones are enabled vs disabled",
+      "expected_output": "Complete list of all firewall policies (all 85, paginated) showing each policy name and enabled/disabled status",
+      "files": []
+    }
+  ]
+}

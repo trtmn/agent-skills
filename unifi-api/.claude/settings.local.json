@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:ubntwiki.com)",
+      "WebFetch(domain:help.ui.com)",
+      "WebFetch(domain:developer.ui.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:myplace.app)",
+      "WebFetch(domain:www.unihosted.com)",
+      "WebFetch(domain:rwaight.github.io)",
+      "WebFetch(domain:community.ui.com)",
+      "WebFetch(domain:artofwifi.net)",
+      "WebFetch(domain:tnware.github.io)",
+      "Bash(ping:*)",
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(open:*)",
+      "Bash(pip3 install:*)"
+    ]
+  }
+}
