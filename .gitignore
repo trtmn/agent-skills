@@ -1,1 +1,10 @@
 .claude/settings.local.json
+
+# Workspace directories (contain PII and temp outputs)
+*-workspace/
+
+# Learning logs
+.learnings/
+
+# macOS
+.DS_Store
