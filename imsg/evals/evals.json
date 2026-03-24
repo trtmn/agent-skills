@@ -1,0 +1,35 @@
+{
+  "skill_name": "imsg",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to check my recent iMessage conversations. Can you list the last 10 chats and show me who I've been talking to?",
+      "expected_output": "Skill uses 'imsg chats --limit 10' to retrieve recent conversations, and formats the output for the user to see who they've been messaging with.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Show me the message history with my friend Alex (their phone number is +15551234567). I want to see the last 30 messages we've exchanged.",
+      "expected_output": "Skill first uses 'imsg chats' or 'imsg history' with participant filtering to find the chat with Alex, then retrieves the last 30 messages.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I need to send a message to my other number at +15559876543 saying 'Running late, be home in 20 minutes'. Please send it as iMessage if possible, but fallback to SMS if needed.",
+      "expected_output": "Skill uses 'imsg send --to +15559876543 --text \"Running late, be home in 20 minutes\" --service auto' to send the message, which should fallback to SMS since it's an SMS-only number.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Can you export all my messages from the 'Weekend Crew' group chat? I want to save them as JSON for backup.",
+      "expected_output": "Skill identifies the chat by name, retrieves all message history, and outputs as JSON for backup.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I want to watch for new messages in my conversation with work colleagues for the next hour. Let me know whenever someone sends me a message.",
+      "expected_output": "Skill identifies the correct chat and uses 'imsg watch' with appropriate options to stream incoming messages in real-time.",
+      "files": []
+    }
+  ]
+}
