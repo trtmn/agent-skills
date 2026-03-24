@@ -1,11 +1,13 @@
 ---
 name: self-improvement
-description: Enables Claude to continuously improve by logging corrections, errors, and learnings during conversations and promoting the most valuable insights to permanent project memory (CLAUDE.md). Use this skill whenever a user corrects Claude's behavior ("actually, it should be...", "don't do that"), requests a capability Claude lacked, Claude encounters a command failure or unexpected error, or after any non-trivial session where new patterns emerged. Also trigger when the user explicitly says "log this", "remember that", "add this to your memory", "learn from this", or asks Claude to analyze GitHub PRs/issues for lessons. The goal is to make every mistake a one-time mistake.
+description: Automatically logs corrections, errors, and learnings to .learnings/ and promotes the most valuable insights to permanent memory (project CLAUDE.md or user ~/.claude/CLAUDE.md) so every mistake is a one-time mistake. MUST use this skill whenever the user corrects Claude ("actually, it should be...", "don't do that", "I told you last time", "I keep having to correct you", "that's wrong"), a command or tool fails unexpectedly, the user asks Claude to remember something for future sessions ("log this", "remember that", "add this to your memory", "learn from this", "make sure we don't hit this again", "track this", "don't forget"), or the user wants to review GitHub PRs/issues for recurring patterns and lessons. Also trigger after substantial debugging sessions when the user wants to capture what went wrong, or when the user asks for an end-of-session review of what was learned. Do NOT trigger for normal coding tasks like writing scripts, refactoring, debugging, setting up projects, writing tests, or reviewing PR code quality — only trigger when the user wants to *persist a lesson* or when an error/correction should be tracked for future reference.
 ---
 
 # Self-Improvement
 
-This skill enables you to get better over time — by logging what you learn and promoting the best insights to places where they'll actually stick.
+This skill makes you better over time. When something goes wrong — a command fails, the user corrects you, you hit a knowledge gap — you log it and, when the insight is worth keeping, promote it to permanent memory so future sessions benefit.
+
+The key difference from a passive "log things" approach: this is automatic. You don't wait to be asked. You log as things happen and promote as soon as something deserves it.
 
 ## Log Files
 
@@ -14,17 +16,29 @@ Maintain three structured markdown files in a `.learnings/` directory at the pro
 - **`.learnings/LEARNINGS.md`** — Corrections, knowledge gaps, best practices
 - **`.learnings/ERRORS.md`** — Command failures, exceptions, unexpected behaviors
 - **`.learnings/FEATURE_REQUESTS.md`** — Capabilities the user asked for that you couldn't provide
+- **`.learnings/CHANGELOG.md`** — Permanent, append-only record of every promotion (and reversion) to CLAUDE.md
 
-## When to Log
+## Automatic Logging
 
-Log immediately when you detect:
-- **User corrections**: "Actually, it should be...", "No, don't...", "That's wrong because..."
-- **Knowledge gaps**: You gave outdated info, missed a project convention, or had to be corrected
-- **Command/tool failures**: A shell command failed, an API call errored, a file operation didn't work as expected
-- **Feature requests**: The user asked for something you couldn't do or didn't know how to do
-- **Patterns repeating**: Same mistake made more than once in a session
+Log immediately — don't ask permission, don't wait for a pause. Context is freshest right after the event. After logging, briefly tell the user what you logged (one line, e.g., "Logged that port conflict to ERRORS.md"). Don't belabor it.
 
-Log immediately — context is freshest right after the issue.
+### What triggers a log entry
+
+- **User corrections**: "Actually, it should be...", "No, don't...", "That's wrong because..." → LEARNINGS.md
+- **Knowledge gaps**: You gave outdated info, missed a project convention, or had to be corrected → LEARNINGS.md
+- **Command/tool failures**: A shell command failed, an API call errored, a file operation didn't work as expected → ERRORS.md
+- **Feature requests**: The user asked for something you couldn't do → FEATURE_REQUESTS.md
+- **Patterns repeating**: Same mistake made more than once in a session → LEARNINGS.md (bump to high priority)
+
+### What does NOT need a log entry
+
+Not every hiccup is worth recording. Skip logging for:
+- Typos or trivial self-corrections that won't recur
+- Failures caused by transient conditions (network blip, server momentarily down)
+- Things already documented in the project's CLAUDE.md or README
+- Minor misunderstandings clarified in one exchange with no broader lesson
+
+The bar: "Would future Claude plausibly make this same mistake?" If yes, log it. If no, move on.
 
 ## Entry Format
 
@@ -67,21 +81,65 @@ Log immediately — context is freshest right after the issue.
 - **Workaround**: What was done instead, if anything
 ```
 
-## Promotion Workflow
+## Automatic Promotion
 
-Not everything belongs in permanent memory — only promote insights that are broadly applicable, not session-specific. A good candidate for promotion is something that, if forgotten, would cause the same mistake again.
+Promotion means writing an insight into a CLAUDE.md file so it persists across all future conversations. The old version of this skill waited until end-of-session and asked for permission — that was too passive. Now, promote immediately when the criteria are met.
 
-Promote to **CLAUDE.md** (project memory) when:
-- A learning applies to the entire project and would affect future sessions
-- A pattern has appeared multiple times
-- A correction reflects a project convention that should always be followed
+### When to promote
 
-When promoting, add a concise entry to CLAUDE.md in the appropriate section, mark the source entry `status: promoted`, and note what was promoted.
+Promote as soon as you recognize that an insight is:
+1. **Broadly applicable** — it applies beyond this one conversation or file
+2. **Likely to recur** — future Claude would plausibly hit the same issue
+3. **Not already documented** — check the target CLAUDE.md first to avoid duplicates
 
-Do **not** promote things that are:
-- One-off workarounds for a temporary situation
-- Specific to a single file or narrow context
-- Already captured elsewhere (e.g., in existing docs or code comments)
+You don't need all three to be strong. A single devastating mistake that's clearly going to repeat is enough. A mild preference that applies everywhere is enough. Use judgment.
+
+### Where to promote
+
+**Project CLAUDE.md** (in the project root) — for project-specific conventions, patterns, and pitfalls. Examples:
+- "This codebase uses `pathlib.Path` everywhere — don't use `os.path.join`"
+- "Tests require a running PostgreSQL instance, not mocks"
+- "The `deploy.sh` script expects AWS_PROFILE=staging"
+
+**User CLAUDE.md** (`~/.claude/CLAUDE.md`) — for cross-project knowledge that applies to this user's environment, preferences, or workflow regardless of which project they're in. Examples:
+- "Port 5000 is taken by AirPlay on macOS — use 8888 for Flask"
+- "User prefers terse responses, no trailing summaries"
+- "Always use `op run` for secrets, never `eval $(op signin)`"
+
+If you're unsure which file, ask yourself: "Would this matter if the user switched to a completely different project?" If yes → user CLAUDE.md. If no → project CLAUDE.md.
+
+### How to promote
+
+1. Read the target CLAUDE.md to find the right section (or create one if needed)
+2. Write a concise, self-contained entry — it should make sense without the original conversation
+3. Mark the source entry in `.learnings/` as `status: promoted`
+4. Append an entry to `.learnings/CHANGELOG.md` (see format below)
+5. Tell the user what you promoted and where (one line, e.g., "Promoted the pathlib convention to project CLAUDE.md")
+
+### Promotion Changelog
+
+Every promotion gets recorded in `.learnings/CHANGELOG.md` — a permanent, append-only audit trail. This lets the user (or future Claude) review what was promoted, when, where, and why, and revert anything that doesn't belong.
+
+```markdown
+## [PROMO-YYYYMMDD-001] Short title matching the source entry
+- **Timestamp**: ISO-8601
+- **Source**: LRN-20260323-001 (or ERR-, FEAT- reference)
+- **Target**: project CLAUDE.md | user CLAUDE.md (~/.claude/CLAUDE.md)
+- **Section**: Which section of the target file it was added to
+- **What was promoted**: The exact text or a close summary of what was written
+- **Why**: One sentence on why this deserved promotion
+```
+
+Never edit or delete changelog entries — if a promotion turns out to be wrong, add a new `[REVERT-YYYYMMDD-001]` entry explaining what was removed and why, then remove it from the target CLAUDE.md.
+
+Keep promoted entries lean. A CLAUDE.md that's 90% promoted learnings becomes noise. Distill the insight down to one or two sentences with a concrete example if helpful.
+
+### What NOT to promote
+
+- One-off workarounds for temporary situations
+- Things specific to a single file or narrow context
+- Debugging steps that are already in the fix (the code is the documentation)
+- Anything already captured in the target CLAUDE.md (check first!)
 
 ## Learning from GitHub PRs and Issues
 
@@ -103,16 +161,6 @@ Extract:
 
 Focus on patterns that appear in multiple PRs/issues rather than one-off events. Always cite the source PR or issue number in the entry.
 
-## End-of-Session Review
-
-At the end of a substantial session (or when the user asks), do a brief review:
-
-1. Scan the log files for any `pending` entries that are high/critical priority
-2. Assess whether any should be promoted to CLAUDE.md
-3. Tell the user: "I logged N learnings this session. Here's what I think is worth keeping long-term: [summary]." Then ask if they want to promote any of them.
-
-Keep this lightweight — don't turn every session into a ceremony. If nothing notable happened, say so and move on.
-
 ## Principles
 
 **Be specific, not vague.** "Don't use deprecated APIs" is useless. "Don't use `os.path.join` in this codebase — it uses `pathlib.Path` everywhere (see utils.py)" is useful.
@@ -122,3 +170,5 @@ Keep this lightweight — don't turn every session into a ceremony. If nothing n
 **Don't over-log.** Not every stumble needs to be recorded. Use judgment — log things that are likely to recur or that reveal a genuine gap, not every minor uncertainty.
 
 **Link related entries.** If an error connects to a learning or a feature request, cross-reference them.
+
+**Act, don't ask.** The whole point of auto-logging and auto-promoting is to reduce friction. Log it, promote it, tell the user you did — don't ask permission each time. The user can always tell you to undo something, but they shouldn't have to remind you to do it.
