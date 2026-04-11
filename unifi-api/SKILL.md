@@ -1,9 +1,11 @@
 ---
 name: unifi-api
-description: Interact with a UniFi Dream Router (UDR) or any UniFi OS console via its REST API. Use this skill whenever the user wants to query or control their UniFi network — listing connected clients, blocking/unblocking devices, managing firewall policies, checking WAN health and speed test results, rebooting devices, managing VLANs or SSIDs, reading traffic stats, port forwarding, or any other UniFi network management task. Trigger even if the user doesn't say "API" or "UniFi" — phrases like "check my network", "block that device", "show me who's connected", "add a firewall rule", "what's my WAN IP", "how's my internet speed", or "what's on the guest network" are all good triggers.
+description: Query and control a UniFi network using the `unifi` CLI (a restish wrapper with 1Password auth) or the REST API as fallback. Use this skill whenever the user wants to manage their UniFi network — listing connected clients, blocking/unblocking devices, managing firewall policies, checking WAN health and speed test results, rebooting devices, managing VLANs or SSIDs, reading traffic stats, port forwarding, or any other UniFi network management task. Prefer the `unifi` CLI for Integration API endpoints; fall back to raw curl/python for legacy API endpoints. Trigger even if the user doesn't say "API" or "UniFi" — phrases like "check my network", "block that device", "show me who's connected", "add a firewall rule", "what's my WAN IP", "how's my internet speed", or "what's on the guest network" are all good triggers.
 allowed-tools:
   - Bash(python3 *:*)
   - Bash(curl -sk *:*)
+  - Bash(unifi *:*)
+  - Bash(restish *:*)
 ---
 
 # UniFi API Skill
@@ -11,13 +13,137 @@ allowed-tools:
 Interact with a UniFi Dream Router or other UniFi OS console via its REST API.
 Tested against UDR-7 running UniFi OS 4.x / Network Application 10.x.
 
-## Setup
+## CLI (restish) — Preferred for Integration API
 
-Ask the user for:
-- **Router IP** (commonly `192.168.1.1`, `10.0.0.1`, or `10.0.1.1`)
-- **API key** — read from `UNIFI_API_KEY` env var (generate in Network App → Integrations → Create New API Key)
+A `unifi` CLI wrapper is installed at `~/.local/bin/unifi`. It uses [restish](https://rest.sh/) with the official OpenAPI spec and injects the API key from 1Password automatically via `op run`.
 
-All requests go to port **443** over HTTPS. The router uses a self-signed cert by default.
+```bash
+# List devices
+unifi get-adopted-device-overview-page default
+
+# List connected clients
+unifi get-connected-client-overview-page default
+
+# List networks
+unifi get-networks-overview-page default
+
+# Get specific network details
+unifi get-network-details <networkId> default
+
+# List firewall policies
+unifi get-firewall-policies default
+
+# JSON output
+unifi get-connected-client-overview-page default --rsh-output-format json
+
+# Filter results (restish shorthand query)
+unifi get-connected-client-overview-page default -f 'data[].{name, ipAddress, type}'
+```
+
+Use `default` as the site ID shorthand — the wrapper replaces it with the real UUID. Override with `UNIFI_SITE=<uuid> unifi ...` for other sites.
+
+Run `unifi --help` for the full list of generated commands (44 total, covering devices, clients, networks, firewall, DNS, WiFi, hotspot, ACLs, and more).
+
+### Restish configuration
+
+- **Config:** `~/Library/Application Support/restish/apis.json`
+- **Spec file:** `~/Library/Application Support/restish/specs/network-10.2.105.json` (patched: server URL set to `/proxy/network/integration` for UDR proxy path)
+- **Auth:** `X-API-Key` header, injected via `UNIFI_API_KEY` env var
+- **Wrapper:** `~/.local/bin/unifi` — handles `op run`, TLS skip, WARN suppression, and `default` → UUID replacement
+
+### Recreating the restish setup from scratch
+
+If restish or the `unifi` wrapper aren't installed, follow these steps to set them up.
+
+**1. Install restish:**
+```bash
+brew install restish
+```
+
+**2. Download the OpenAPI spec from Ubiquiti:**
+
+Go to https://developer.ui.com/ and download the Network API spec for your controller version (JSON format). Save it to the restish specs directory:
+
+```bash
+mkdir -p ~/Library/Application\ Support/restish/specs
+# Move or copy the downloaded spec file:
+mv ~/Downloads/network-<version>.json ~/Library/Application\ Support/restish/specs/
+```
+
+**3. Patch the spec's server URL:**
+
+The downloaded spec has `"servers": [{"url": "/proxy/network/integration"}]`. This is correct for UDR proxy-path access — no changes needed. If the `url` value differs (e.g., an absolute URL), edit the JSON to set it to `/proxy/network/integration`.
+
+**4. Create the restish API config:**
+
+```bash
+cat > ~/Library/Application\ Support/restish/apis.json << 'EOF'
+{
+  "$schema": "https://rest.sh/schemas/apis.json",
+  "unifi": {
+    "base": "https://10.0.0.1",
+    "spec_files": [
+      "/Users/fishy/Library/Application Support/restish/specs/network-<version>.json"
+    ],
+    "profiles": {
+      "default": {
+        "headers": {
+          "X-API-Key": "${UNIFI_API_KEY}"
+        }
+      }
+    }
+  }
+}
+EOF
+```
+
+Replace `<version>` with the actual spec version (e.g., `10.2.105`). Update `base` if your router IP differs from `10.0.0.1`.
+
+**5. Create the wrapper script:**
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/unifi << 'SCRIPT'
+#!/bin/bash
+# UniFi Network CLI — wraps restish with 1Password API key injection
+UNIFI_SITE="${UNIFI_SITE:-88f7af54-98f8-306a-a1c7-c9349722b1f6}"
+
+# Replace "default" with the real site UUID in positional args
+args=()
+for arg in "$@"; do
+  [[ "$arg" == "default" ]] && arg="$UNIFI_SITE"
+  args+=("$arg")
+done
+
+exec op run --env-file=<(echo 'UNIFI_API_KEY=op://Claude/Unifi API Key/credential') -- \
+  restish unifi --rsh-insecure --rsh-no-cache "${args[@]}" 2> >(grep -v '^WARN:' >&2)
+SCRIPT
+chmod +x ~/.local/bin/unifi
+```
+
+Update the `UNIFI_SITE` UUID for your site. Find it by running:
+```bash
+op run --env-file=<(echo 'UNIFI_API_KEY=op://Claude/Unifi API Key/credential') -- \
+  restish unifi --rsh-insecure get-sites --rsh-output-format json 2>/dev/null
+```
+
+**6. Verify it works:**
+```bash
+unifi get-sites
+unifi get-adopted-device-overview-page default
+```
+
+### When to use the CLI vs raw API
+
+- **CLI (`unifi`)** — for Integration API endpoints. Auto-discovers all operations from the OpenAPI spec. Handles pagination flags, output formatting, and auth.
+- **Raw curl/python** — for Legacy API endpoints (e.g., `stat/sta`, `cmd/stamgr`, `rest/wlanconf`). The legacy API is not covered by the OpenAPI spec.
+
+## Raw API Setup (Legacy + Integration)
+
+For Legacy API endpoints or when CLI isn't available:
+
+- **Router IP**: read from the `unifi` wrapper or ask the user (commonly `10.0.0.1`)
+- **API key**: injected via `op run` — never hardcode or print
 
 ```python
 import os, urllib.request, json, ssl
@@ -69,6 +195,8 @@ SITE_S = sites[0]["internalReference"]  # short name (usually "default") — for
 IV1    = f"/proxy/network/integration/v1/sites/{SITE}"
 LEGACY = f"/proxy/network/api/s/{SITE_S}"
 ```
+
+For the `unifi` CLI, pass `default` as the site ID — the wrapper handles UUID substitution.
 
 ## Response Formats
 
