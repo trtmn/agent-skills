@@ -1,5 +1,14 @@
 # Agent Skills Repository
 
+> [!WARNING]
+> **This repository is deprecated.** It has been superseded by [**trtmn/claude-plugins**](https://github.com/trtmn/claude-plugins) — the same skills (plus subagents, slash commands, and MCP-ready structure) repackaged as a Claude Code plugin marketplace. New development and fixes happen there. This repo remains read-only for existing `npx skills add` consumers.
+>
+> **Migrate:**
+> ```
+> /plugin marketplace add trtmn/claude-plugins
+> /plugin install <plugin-name>@claude-plugins
+> ```
+
 ## Overview
 This repository contains a collection of **skills** compatible with the [skills.sh](https://skills.sh) specification and any AI agent that supports it. A *skill* is a reusable work‑flow that can be invoked from the command line, a Slack bot, or programmatically via the Claude Agent SDK. All the skills in this repo are designed to be portable, test‑driven, and idiomatic for anyone building AI‑assisted workflows.
 
